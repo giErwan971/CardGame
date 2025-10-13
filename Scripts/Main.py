@@ -1,4 +1,5 @@
 import pygame
+import UI
 from win32api import GetSystemMetrics
 
 
@@ -18,17 +19,22 @@ elif ratio > 4/3:
 
         #   --- INITIALISATION PYGAME ---  #
 pygame.init()
-ecran = pygame.display.set_mode((GetSystemMetrics (0), GetSystemMetrics (1)), pygame.FULLSCREEN)
-pygame.draw.rect(ecran, (180, 20, 150), (offsets[0], offsets[1], resolution[0], resolution[1]))
+screen = pygame.display.set_mode((GetSystemMetrics (0), GetSystemMetrics (1)), pygame.FULLSCREEN)
+pygame.draw.rect(screen, (180, 20, 150), (offsets[0], offsets[1], resolution[0], resolution[1]))
 pygame.display.flip()
-
+def tralala():
+    print("okkkkkkk")
+button = UI.Button(pygame.Rect(150, 100, 100, 50), "Test", "Assets\Cards\Cute Cards\Suit Of Clubs\Clubs_1.png", tralala)
 
         #   ------- BOUCLE DE JEU -------  #
 run = True
 while run:
     for event in pygame.event.get():
-        
+        button.show(screen)
         if event.type == pygame.QUIT or event.type == pygame.KEYDOWN:
             run = False
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            button.isClic()
+        pygame.display.flip()
 
 pygame.quit()
