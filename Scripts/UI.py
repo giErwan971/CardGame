@@ -1,11 +1,12 @@
 import pygame
 class Button:
-    def __init__(self, rect: pygame.Rect, imgOffsets, text, bg: pygame.Surface, function):
+    def __init__(self, rect: pygame.Rect, imgOffsets, text, bg: pygame.Surface, function, isActive: bool = True):
         self.rect = rect
         self.imgOffets = imgOffsets
         self.text = text
         self.bg = bg
         self.function = function
+        self.isActive = isActive
         mouseIn = False
 
     def setImage(self, bg: pygame.Surface):
@@ -15,7 +16,7 @@ class Button:
         screen.blit(self.bg, (self.rect.x - self.imgOffets[0], self.rect.y - self.imgOffets[1]))
     
     def isClic(self, resoCible, resolution, offsets):
-        if self.rect.collidepoint(get_scaled_mouse_pos(resoCible, resolution, offsets)):
+        if self.isActive and self.rect.collidepoint(get_scaled_mouse_pos(resoCible, resolution, offsets)):
             self.function()
 
     def MouseEnter(self):
