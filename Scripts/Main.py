@@ -1,7 +1,8 @@
 import pygame
 import UI
 import Cards
-from win32api import GetSystemMetrics
+
+# from win32api import GetSystemMetrics
 import time
 # numpy est neccessaire pour la fonction bloomCombination mais pas besion d'import
 
@@ -353,14 +354,15 @@ def suppEmptyCombinations():
 
 
 pygame.init()
+screen_info = pygame.display.Info()
 screen = pygame.display.set_mode(
-    (GetSystemMetrics(0), GetSystemMetrics(1)), pygame.FULLSCREEN
+    (screen_info.current_w, screen_info.current_h), pygame.FULLSCREEN
 )
 
 
 #   ----- ADAPTER RESOLUTION ----  #
 resoCible = [315, 250]
-resolution = [GetSystemMetrics(0), GetSystemMetrics(1)]
+resolution = [screen_info.current_w, screen_info.current_h]
 offsets = [0, 0]
 ratio = resolution[0] / resolution[1]
 if ratio > resoCible[0] / resoCible[1]:
@@ -375,37 +377,37 @@ UIScreen = pygame.Surface((resoCible[0], resoCible[1]))
 CardsScreen = pygame.Surface((resolution[0], resolution[1]), pygame.SRCALPHA)
 
 #   --------- LES IMAGES --------  #
-backgroundMain = pygame.image.load("Assets\\MainMenu\\BackGround.png")
+backgroundMain = pygame.image.load("Assets/MainMenu/BackGround.png")
 backgroundMain = backgroundMain.convert()
 
-jeton2TileMap = pygame.image.load("Assets\\MainMenu\\Jeton\\jeton2TileMap.png")
+jeton2TileMap = pygame.image.load("Assets/MainMenu/Jeton/Jeton2TileMap.png")
 jeton2Tiles = [jeton2TileMap.subsurface(x, 0, 64, 72) for x in range(0, 256, 64)]
 jeton2rect = pygame.Rect(196, 49, 64, 72)
 jeton2 = jeton2Tiles[0]
 
-jeton1TileMap = pygame.image.load("Assets\\MainMenu\\Jeton\\jeton1TileMap.png")
+jeton1TileMap = pygame.image.load("Assets/MainMenu/Jeton/Jeton1TileMap.png")
 jeton1Tiles = [jeton1TileMap.subsurface(x, 0, 69, 61) for x in range(0, 552, 69)]
 jeton1rect = pygame.Rect(41, 58, 69, 61)
 jeton1 = jeton1Tiles[0]
 
-diceTileMap = pygame.image.load("Assets\\MainMenu\\DiceTileMap.png")
+diceTileMap = pygame.image.load("Assets/MainMenu/DiceTileMap.png")
 diceTiles = [diceTileMap.subsurface(0, y, 64, 16) for y in range(0, 118, 16)]
 
-playButtonTileMap = pygame.image.load("Assets\\MainMenu\\Button\\PlayTileMap.png")
+playButtonTileMap = pygame.image.load("Assets/MainMenu/Button/PlayTileMap.png")
 playButtonTiles = [
     playButtonTileMap.subsurface(x, 0, 86, 48) for x in range(0, 774, 86)
 ]
-teamButtonTileMap = pygame.image.load("Assets\\MainMenu\\Button\\TeamTileMap.png")
+teamButtonTileMap = pygame.image.load("Assets/MainMenu/Button/TeamTileMap.png")
 teamButtonTiles = [
     teamButtonTileMap.subsurface(x, 0, 86, 48) for x in range(0, 774, 86)
 ]
 
-cardsBox = pygame.image.load("Assets\\MainMenu\\CardsBox.png")
-cardsDeck = pygame.image.load("Assets\\MainMenu\\CardsDeck.png")
+cardsBox = pygame.image.load("Assets/MainMenu/CardsBox.png")
+cardsDeck = pygame.image.load("Assets/MainMenu/CardsDeck.png")
 drawPileAssets = pygame.image.load(
-    "Assets\\Cards\\King's Cards\\Back And Joker\\DrawPile.png"
+    "Assets/Cards/King's Cards/Back And Joker/DrawPile.png"
 )
-backCard = pygame.image.load("Assets\\Cards\\King's Cards\\Back And Joker\\Back_1.png")
+backCard = pygame.image.load("Assets/Cards/King's Cards/Back And Joker/Back_1.png")
 
 
 #   ------ LES ANNIMATIONS ------  #
@@ -741,4 +743,3 @@ while run:
     time.sleep(0.01)
 
 pygame.quit()
-

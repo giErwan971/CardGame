@@ -10,7 +10,7 @@ class Card:
             etat  # 0 = in draw pile, 1 = in hand, 2 = in opponent hand, 3 = on table
         )
         self.bg = pygame.image.load(
-            f"Assets\\Cards\\King's Cards\\Suit Of {color}\\{color}_{value}.png"
+            f"Assets/Cards/King's Cards/Suit Of {color}/{color}_{value}.png"
         )
 
     def getAll(self):
