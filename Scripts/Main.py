@@ -6,6 +6,15 @@ import time
 #numpy est neccessaire pour la fonction bloomCombination mais pas besion d'import
 
         #   ------- FONCTION CLEE -------  #
+
+def undo():
+    global onTable, inHand, allSavedDeck
+    if len(allSavedDeck) == 0:
+        return
+    newDeck = allSavedDeck.pop()
+    inHand = newDeck.inHand
+    onTable = newDeck.onTable
+
 def getScaledMousePosUI():
     mouse_x, mouse_y = pygame.mouse.get_pos()
     scale_x = resoCible[0] / resolution[0]
@@ -146,16 +155,17 @@ def checkCombinations(allCombinations: list[list[Cards.Card]]) -> tuple:
     return (True, allCombinations)
 
 def selectCardFromHand():
-    global selectedCard, mouseGrabOffset, inHand, isOnDelPhase,drawPile, deck, discardPile, isOnDrawPhase
+    global selectedCard, mouseGrabOffset, inHand, isOnDelPhase,drawPile, deck, discardPile, isOnDrawPhase, savedDeck
     for i in range(len(inHand)):
         if pygame.Rect(16*2+i*44+(13-len(inHand))*22, 215*2, 37, 52).collidepoint(getScaledMousePosCards()):
             if not isOnDelPhase and not isOnDrawPhase:
+                savedDeck = deck.saveDeck()
                 selectedCard.card = inHand[i]
                 selectedCard.come = 0
                 selectedCard.y = i
                 mouseGrabOffset = (getScaledMousePosCards()[0] - (16*2+i*44+(13-len(inHand))*22), getScaledMousePosCards()[1] - 210*2)
                 inHand.remove(selectedCard.card)
-            else:
+            elif isOnDelPhase:
                 discardPile.append(inHand.pop(i))
                 isOnDelPhase = False
                 isOnDrawPhase = True
@@ -338,11 +348,12 @@ def teamButtonClic():
     print("Team Pressed")
 
 def nextTurnButtonClic():
-    global drawPile, onTable, isOnDelPhase
+    global drawPile, onTable, isOnDelPhase, allSavedDeck
     isOK, newTable = checkCombinations(deck.onTable)
     if isOK:
         onTable = newTable
         isOnDelPhase = True
+        allSavedDeck = []
 
 def drawPileButtonClic():
     global inHand, drawPile, isOnDrawPhase
@@ -387,9 +398,10 @@ selectedCard.y = 0
 run = True
 isOnMainMenu = True
 isOnDelPhase = False
-isOnDrawPhase = False
+isOnDrawPhase = True
 mouseGrabOffset = [0, 0]
 savedDeck = None
+allSavedDeck = []
 while run:
     drawPile = deck.drawPile
     onTable = deck.onTable
@@ -408,14 +420,20 @@ while run:
             selectCardFromHand()
             selectCardFromTable()
 
-        if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_z and (event.mod & pygame.KMOD_CTRL):
+                undo()
+
+        if event.type == pygame.MOUSEBUTTONUP and event.button == 1 and selectedCard.card != None:
             for i in range(len(onTable)):
                 dropCardOnTable(selectedCard.card, i)
                 if selectedCard.card == None:
+                    allSavedDeck.append(savedDeck)
                     break
             if selectedCard.card != None:
                 if pygame.Rect(37*2, 60*2, 241*2, 138*2).collidepoint(getScaledMousePosCards()):
                     onTable.append([selectedCard.card])
+                    allSavedDeck.append(savedDeck)
                 elif selectedCard.come == 0:
                     inHand.insert(selectedCard.y, selectedCard.card)
                 else:
@@ -468,7 +486,7 @@ while run:
 
         #les cartes en main
         for i in range(len(inHand)):
-            if pygame.Rect(16*2+i*44+(13-len(inHand))*22, 215*2, 37, 52).collidepoint(getScaledMousePosCards()) and selectedCard.card == None:
+            if pygame.Rect(16*2+i*44+(13-len(inHand))*22, 215*2, 37, 52).collidepoint(getScaledMousePosCards()) and selectedCard.card == None and not isOnDrawPhase:
                 inHand[i].show(CardsScreen, (16*2+i*44+(13-len(inHand))*22, 210*2), (0, 150, 255, 100) if not isOnDelPhase else (255, 0, 0, 100))
             else:
                 inHand[i].show(CardsScreen, (16*2+i*44+(13-len(inHand))*22, 215*2))
