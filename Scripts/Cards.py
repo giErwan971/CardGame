@@ -44,7 +44,7 @@ class Deck:
         self.drawPile: list[Card] = drawPile
         self.onTable: list[list[Card]] = onTable
         self.inHand: list[Card] = inHand
-        self.inDiscardPile: list[Card] = []
+        self.inDiscardPile: list[Card] = inDiscardPile
         self.inOpponentHand: list[Card] = inOpponentHand
         if len(allCards) == 0:
             for i in range(2):

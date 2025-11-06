@@ -9,6 +9,16 @@ import time
 
 
 #   ------- FONCTION CLEE -------  #
+def undo():
+    global deck, allSavedDeck, onTable, drawPile, discardPile, inOpponentHand, inHand
+    if len(allSavedDeck) != 0 and not (isOnDelPhase or isOnDelPhase):
+        deck = allSavedDeck.pop()
+        drawPile = deck.drawPile
+        onTable = deck.onTable
+        inHand = deck.inHand
+        inOpponentHand = deck.inOpponentHand
+        discardPile = deck.inDiscardPile
+
 def getScaledMousePosUI():
     mouse_x, mouse_y = pygame.mouse.get_pos()
     scale_x = resoCible[0] / resolution[0]
@@ -156,7 +166,7 @@ def showCardOnTable(combinationNumber: int, cardPosition: int):
 
 
 def dropCardOnTable(card: Cards.Card, combinationNumber: int):
-    global selectedCard, onTable
+    global selectedCard, onTable, allSavedDeck, savedDeck
     combination = onTable[combinationNumber]
     x = combinationNumber
     row = x // 11
@@ -277,12 +287,14 @@ def selectCardFromHand():
         drawPile, \
         deck, \
         discardPile, \
-        isOnDrawPhase
+        isOnDrawPhase, \
+        savedDeck
     for i in range(len(inHand)):
         if pygame.Rect(
             16 * 2 + i * 44 + (13 - len(inHand)) * 22, 215 * 2, 37, 52
         ).collidepoint(getScaledMousePosCards()):
             if not isOnDelPhase and not isOnDrawPhase:
+                savedDeck = deck.saveDeck()
                 selectedCard.card = inHand[i]
                 selectedCard.come = 0
                 selectedCard.y = i
@@ -615,6 +627,7 @@ isOnDelPhase = False
 isOnDrawPhase = False
 mouseGrabOffset = [0, 0]
 savedDeck = None
+allSavedDeck: list[Cards.Deck] = []
 while run:
     drawPile = deck.drawPile
     onTable = deck.onTable
@@ -641,12 +654,14 @@ while run:
             for i in range(len(onTable)):
                 dropCardOnTable(selectedCard.card, i)
                 if selectedCard.card == None:
+                    allSavedDeck.append(savedDeck)
                     break
             if selectedCard.card != None:
                 if pygame.Rect(37 * 2, 60 * 2, 241 * 2, 138 * 2).collidepoint(
                     getScaledMousePosCards()
                 ):
                     onTable.append([selectedCard.card])
+                    allSavedDeck.append(savedDeck)
                 elif selectedCard.come == 0:
                     inHand.insert(selectedCard.y, selectedCard.card)
                 else:
@@ -663,6 +678,9 @@ while run:
             else:
                 onTable = savedDeck.onTable
             selectedCard.card = None
+        
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_z and (event.mod & pygame.KMOD_CTRL):
+            undo()
 
     # LES GRAPHISMES
     UIScreen = pygame.transform.scale(UIScreen, (resoCible[0], resoCible[1]))
