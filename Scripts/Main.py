@@ -9,15 +9,31 @@ import time
 
 
 #   ------- FONCTION CLEE -------  #
+def resetTurn():
+    global deck, allSavedDeck, onTable, drawPile, discardPile, inOpponentHand, inHand, isOnDrawPhase
+    if len(allSavedDeck) != 0 and not (isOnDelPhase or isOnDrawPhase):
+        check = discardPile[-1]
+        deck = allSavedDeck[0]
+        allSavedDeck = []
+        drawPile = deck.drawPile
+        onTable = deck.onTable
+        inHand = deck.inHand
+        inOpponentHand = deck.inOpponentHand
+        discardPile = deck.inDiscardPile
+        if check != discardPile[-1]:
+            isOnDrawPhase = True
 def undo():
-    global deck, allSavedDeck, onTable, drawPile, discardPile, inOpponentHand, inHand
-    if len(allSavedDeck) != 0 and not (isOnDelPhase or isOnDelPhase):
+    global deck, allSavedDeck, onTable, drawPile, discardPile, inOpponentHand, inHand, isOnDrawPhase
+    if len(allSavedDeck) != 0 and not (isOnDelPhase or isOnDrawPhase):
+        check = discardPile[-1]
         deck = allSavedDeck.pop()
         drawPile = deck.drawPile
         onTable = deck.onTable
         inHand = deck.inHand
         inOpponentHand = deck.inOpponentHand
         discardPile = deck.inDiscardPile
+        if check != discardPile[-1]:
+            isOnDrawPhase = True
 
 def getScaledMousePosUI():
     mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -166,7 +182,7 @@ def showCardOnTable(combinationNumber: int, cardPosition: int):
 
 
 def dropCardOnTable(card: Cards.Card, combinationNumber: int):
-    global selectedCard, onTable, allSavedDeck, savedDeck
+    global selectedCard, onTable, allSavedDeck, savedDeck, doDropCard
     combination = onTable[combinationNumber]
     x = combinationNumber
     row = x // 11
@@ -192,31 +208,15 @@ def dropCardOnTable(card: Cards.Card, combinationNumber: int):
         )
     if rect.collidepoint(getScaledMousePosCards()):
         if selectedCard.card != None:
-            rect = pygame.Rect(
-                43 * 2 + (combinationNumber % 11) * 42,
-                52 * 2
-                + combinationNumber
-                // 11
-                * (
-                    15
-                    * len(
-                        onTable[combinationNumber - 11]
-                        if combinationNumber > 10
-                        else []
-                    )
-                    + 55
-                ),
-                36,
-                (15 * len(combination) + 37) / 2,
-            )
-            if rect.collidepoint(getScaledMousePosCards()):
-                combination.insert(0, card)
+            combination.append(card)
+            combination.sort(key=lambda card: (card.value, card.color))
+            if len(combination) != 6:
                 onTable[combinationNumber] = combination
             else:
-                combination.append(card)
-                onTable[combinationNumber] = combination
-            onTable[combinationNumber].sort(key=lambda card: (card.value, card.color))
+                onTable[combinationNumber] = combination[:3]
+                onTable.insert(combinationNumber+1, combination[3:])
             selectedCard.card = None
+            doDropCard = True
 
 
 def cardToMouse(card: Cards.Card):
@@ -275,7 +275,9 @@ def checkCombinations(allCombinations: list[list[Cards.Card]]) -> tuple:
                 return (False, [card.value for card in combination])
         else:
             return (False, [card.value for card in combination])
-    return (True, allCombinations)
+    if cardDrawOnDiscardPile == None or not (cardDrawOnDiscardPile in inHand):
+        return (True, allCombinations)
+    return (False, allCombinations)
 
 
 def selectCardFromHand():
@@ -304,59 +306,10 @@ def selectCardFromHand():
                     getScaledMousePosCards()[1] - 210 * 2,
                 )
                 inHand.remove(selectedCard.card)
-            else:
+            elif isOnDelPhase:
                 discardPile.append(inHand.pop(i))
                 isOnDelPhase = False
                 isOnDrawPhase = True
-
-
-def selectCardFromTable():
-    global selectedCard, mouseGrabOffset, onTable, savedDeck, deck, isOnDelPhase
-    if isOnDelPhase or isOnDrawPhase:
-        return
-    for x in range(len(onTable)):
-        for y in range(len(onTable[x])):
-            row = x // 11
-            if row == 0:
-                rect = pygame.Rect(
-                    43 * 2 + (x % 11) * 42,
-                    52 * 2 + y * 15,
-                    37,
-                    52 if len(onTable[x]) == y + 1 else 15,
-                )
-            elif row == 1:
-                rect = pygame.Rect(
-                    43 * 2 + (x % 11) * 42,
-                    52 * 2 + y * 15 + (15 * len(onTable[x - 11]) + 55),
-                    37,
-                    52 if len(onTable[x]) == y + 1 else 15,
-                )
-            else:
-                rect = pygame.Rect(
-                    43 * 2 + (x % 11) * 42,
-                    52 * 2
-                    + y * 15
-                    + (15 * len(onTable[x - 11]) + 55)
-                    + (15 * len(onTable[x - 22]) + 55),
-                    37,
-                    52 if len(onTable[x]) == y + 1 else 15,
-                )
-            if rect.collidepoint(getScaledMousePosCards()):
-                savedDeck = deck.saveDeck()
-                selectedCard.card = onTable[x][y]
-                selectedCard.come = 1
-                selectedCard.x = x
-                selectedCard.y = y
-                mouseGrabOffset = (
-                    getScaledMousePosCards()[0] - rect.x,
-                    getScaledMousePosCards()[1] - rect.y,
-                )
-                left = onTable[x][:y]
-                right = onTable[x][y + 1 :]
-                onTable[x] = left
-                onTable.insert(x + 1, right)
-                suppEmptyCombinations()
-                return
 
 
 def suppEmptyCombinations():
@@ -542,25 +495,36 @@ def teamButtonClic():
 
 
 def nextTurnButtonClic():
-    global drawPile, onTable, isOnDelPhase
+    global drawPile, onTable, isOnDelPhase, doDropCard, allSavedDeck, isOnDrawPhase
     isOK, newTable = checkCombinations(deck.onTable)
-    if isOK:
+    if isOK and not (isOnDelPhase or isOnDrawPhase):
         onTable = newTable
-        isOnDelPhase = True
+        allSavedDeck = []
+        if not doDropCard:
+            isOnDelPhase = True
+        else:
+            isOnDrawPhase = True
+        doDropCard = False
 
 
 def drawPileButtonClic():
-    global inHand, drawPile, isOnDrawPhase
+    global inHand, drawPile, isOnDrawPhase, cardDrawOnDiscardPile, allSavedDeck, deck
     if isOnDrawPhase:
+        cardDrawOnDiscardPile = None
         inHand.append(drawPile.pop())
         isOnDrawPhase = False
+        allSavedDeck = [deck.saveDeck()]
+        inHand.sort(key=lambda c: (c.color, c.value))
 
 
 def discardPileButton():
-    global inHand, discardPile, isOnDrawPhase
+    global inHand, discardPile, isOnDrawPhase, cardDrawOnDiscardPile, deck, allSavedDeck
     if isOnDrawPhase:
-        inHand.append(discardPile.pop())
+        allSavedDeck = [deck.saveDeck()]
+        cardDrawOnDiscardPile = discardPile.pop()
+        inHand.append(cardDrawOnDiscardPile)
         isOnDrawPhase = False
+        inHand.sort(key=lambda c: (c.color, c.value))
 
 
 # LES BOUTONS
@@ -607,16 +571,10 @@ deck.shuffleDeck()
 for i in range(13):
     cardTest = deck.pickCard()
     deck.inHand.append(cardTest)
+deck.inHand.sort(key=lambda c: (c.color, c.value))
 for i in range(1):
     cardTest = deck.pickCard()
     deck.inOpponentHand.append(cardTest)
-"""tmp=[]
-for i in range(24):
-    for j in range(3):
-        cardTest = deck.pickCard()
-        tmp.append(cardTest)
-    deck.onTable.append(tmp)
-    tmp = []"""
 deck.inDiscardPile.append(deck.pickCard())
 
 selectedCard = Cards.cardSelected(None, 0, 0)
@@ -625,6 +583,8 @@ run = True
 isOnMainMenu = True
 isOnDelPhase = False
 isOnDrawPhase = False
+doDropCard = False
+cardDrawOnDiscardPile: Cards.Card = None
 mouseGrabOffset = [0, 0]
 savedDeck = None
 allSavedDeck: list[Cards.Deck] = []
@@ -648,7 +608,6 @@ while run:
             for button in allButton:
                 button.isClic(resoCible, resolution, offsets)
             selectCardFromHand()
-            selectCardFromTable()
 
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             for i in range(len(onTable)):
@@ -681,6 +640,8 @@ while run:
         
         if event.type == pygame.KEYDOWN and event.key == pygame.K_z and (event.mod & pygame.KMOD_CTRL):
             undo()
+        elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+            resetTurn()
 
     # LES GRAPHISMES
     UIScreen = pygame.transform.scale(UIScreen, (resoCible[0], resoCible[1]))
