@@ -341,6 +341,7 @@ elif ratio > resoCible[1] / resoCible[0]:
     offsets[1] = lastH - resolution[1] / 2
 UIScreen = pygame.Surface((resoCible[0], resoCible[1]))
 CardsScreen = pygame.Surface((resolution[0], resolution[1]), pygame.SRCALPHA)
+RuleScreen = pygame.Surface((resoCible[0]*3, resoCible[1]*3), pygame.SRCALPHA)
 
 #   --------- LES IMAGES --------  #
 backgroundMain = pygame.image.load("Assets/MainMenu/BackGround.png")
@@ -359,6 +360,8 @@ jeton1 = jeton1Tiles[0]
 diceTileMap = pygame.image.load("Assets/MainMenu/DiceTileMap.png")
 diceTiles = [diceTileMap.subsurface(0, y, 64, 16) for y in range(0, 118, 16)]
 
+rules = pygame.image.load("Assets/MainMenu/RuleMenu.png")
+
 playButtonTileMap = pygame.image.load("Assets/MainMenu/Button/PlayTileMap.png")
 playButtonTiles = [
     playButtonTileMap.subsurface(x, 0, 86, 48) for x in range(0, 774, 86)
@@ -366,6 +369,10 @@ playButtonTiles = [
 teamButtonTileMap = pygame.image.load("Assets/MainMenu/Button/TeamTileMap.png")
 teamButtonTiles = [
     teamButtonTileMap.subsurface(x, 0, 86, 48) for x in range(0, 774, 86)
+]
+ruleButtonTileMap = pygame.image.load("Assets/MainMenu/Button/RuleTileMap.png")
+ruleButtonTiles = [
+    ruleButtonTileMap.subsurface(x, 0, 86, 48) for x in range(0, 774, 86)
 ]
 
 cardsBox = pygame.image.load("Assets/MainMenu/CardsBox.png")
@@ -411,6 +418,24 @@ def annimationTeamButton():
         teamButton.setImage(teamButtonTiles[actuelFrame])
     annimationTeamButton_isMouseOn = isMouseOn
     annimationTeamButton_actuelFrame = actuelFrame
+
+
+annimationRuleButton_actuelFrame = 0
+annimationRuleButton_isMouseOn = False
+
+
+def annimationRuleButton():
+    global annimationRuleButton_actuelFrame, annimationRuleButton_isMouseOn
+    actuelFrame = annimationRuleButton_actuelFrame
+    isMouseOn = ruleButton.rect.collidepoint(getScaledMousePosUI())
+    if isMouseOn and actuelFrame < len(ruleButtonTiles) - 1:
+        actuelFrame += 1
+        ruleButton.setImage(ruleButtonTiles[actuelFrame])
+    elif not isMouseOn and actuelFrame > 0:
+        actuelFrame -= 1
+        ruleButton.setImage(ruleButtonTiles[actuelFrame])
+    annimationRuleButton_isMouseOn = isMouseOn
+    annimationRuleButton_actuelFrame = actuelFrame
 
 
 annimationJeton1_actuelFrame = 0
@@ -494,6 +519,12 @@ def teamButtonClic():
     print("Team Pressed")
 
 
+def ruleButtonClic():
+    global isOnRuleScreen, allButton
+    isOnRuleScreen = True
+    for button in allButton:
+        button.isActive = False
+
 def nextTurnButtonClic():
     global drawPile, onTable, isOnDelPhase, doDropCard, allSavedDeck, isOnDrawPhase
     isOK, newTable = checkCombinations(deck.onTable)
@@ -513,8 +544,8 @@ def drawPileButtonClic():
         cardDrawOnDiscardPile = None
         inHand.append(drawPile.pop())
         isOnDrawPhase = False
-        allSavedDeck = [deck.saveDeck()]
         inHand.sort(key=lambda c: (c.color, c.value))
+        allSavedDeck = [deck.saveDeck()]
 
 
 def discardPileButton():
@@ -529,18 +560,25 @@ def discardPileButton():
 
 # LES BOUTONS
 playButton = UI.Button(
-    pygame.Rect(125, 65, 64, 48),
+    pygame.Rect(125, 53, 64, 48),
     (11, 0),
     "PlayButton",
     playButtonTiles[0],
     playButtonClic,
 )
 teamButton = UI.Button(
-    pygame.Rect(125, 144, 64, 48),
+    pygame.Rect(125, 159, 64, 48),
     (11, 0),
     "TeamButton",
     teamButtonTiles[0],
     teamButtonClic,
+)
+ruleButton = UI.Button(
+    pygame.Rect(125, 105, 64, 48),
+    (11, 0),
+    "RuleButton",
+    ruleButtonTiles[0],
+    ruleButtonClic,
 )
 nextTurnButton = UI.Button(
     pygame.Rect(125, 198, 64, 16),
@@ -563,7 +601,7 @@ discardPileButton = UI.Button(
     drawPileAssets,
     discardPileButton,
 )
-allButton = [playButton, teamButton, nextTurnButton, drawPileButton, discardPileButton]
+allButton = [playButton, teamButton, ruleButton, nextTurnButton, drawPileButton, discardPileButton]
 
 #   ------- BOUCLE DE JEU -------  #
 deck = Cards.Deck()
@@ -580,6 +618,7 @@ deck.inDiscardPile.append(deck.pickCard())
 selectedCard = Cards.cardSelected(None, 0, 0)
 selectedCard.y = 0
 run = True
+isOnRuleScreen = False
 isOnMainMenu = True
 isOnDelPhase = False
 isOnDrawPhase = False
@@ -608,6 +647,12 @@ while run:
             for button in allButton:
                 button.isClic(resoCible, resolution, offsets)
             selectCardFromHand()
+
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+            if isOnRuleScreen:
+                isOnRuleScreen = False
+                for button in allButton:
+                    button.isActive = True
 
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             for i in range(len(onTable)):
@@ -650,6 +695,7 @@ while run:
     )
     UIScreen.fill((0, 0, 0))
     CardsScreen.fill((0, 0, 0, 0))
+    RuleScreen.fill((0, 0, 0, 0))
 
     if isOnMainMenu:
         UIScreen.blit(backgroundMain, (0, 0))
@@ -659,16 +705,23 @@ while run:
         UIScreen.blit(jeton1, (jeton1rect.x, jeton1rect.y))
         playButton.show(UIScreen)
         teamButton.show(UIScreen)
+        ruleButton.show(UIScreen)
 
-        annimationTeamButton()
-        annimationPlayButton()
-        annimationJeton1()
-        annimationJeton2()
+        if isOnRuleScreen:
+            RuleScreen = pygame.transform.scale(RuleScreen, (resoCible[0]*3, resoCible[1]*3))
+            RuleScreen.blit(rules, (0, 0))
+            RuleScreen = pygame.transform.scale(RuleScreen, (resolution[0], resolution[1]))
+        else:
+            annimationRuleButton()
+            annimationTeamButton()
+            annimationPlayButton()
+            annimationJeton1()
+            annimationJeton2()
 
     else:
         UIScreen.blit(backgroundMain, (0, 0))
         drawPileButton.show(UIScreen)
-        discardPileButton.show(UIScreen)
+        if len(discardPile) != 0: discardPileButton.show(UIScreen)
         discardPile[-1].show(UIScreen, (3, 99))
 
         if not isOnDelPhase and not isOnDrawPhase:
@@ -709,6 +762,8 @@ while run:
     UIScreen = pygame.transform.scale(UIScreen, (resolution[0], resolution[1]))
     CardsScreen = pygame.transform.scale(CardsScreen, (resolution[0], resolution[1]))
     UIScreen.blit(CardsScreen, (0, 0))
+    UIScreen.blit(RuleScreen, (0, 0))
+
 
     screen.blit(UIScreen, (offsets[0], offsets[1]))
 
