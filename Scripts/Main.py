@@ -1,330 +1,24 @@
 import pygame
 import UI
 import Cards
-import os
-
+import Rami
+import utils
 # from win32api import GetSystemMetrics
 import time
 # numpy est neccessaire pour la fonction bloomCombination mais pas besion d'import
 
 
 #   ------- FONCTION CLEE -------  #
-def resetTurn():
-    global deck, allSavedDeck, onTable, drawPile, discardPile, inOpponentHand, inHand, isOnDrawPhase
-    if len(allSavedDeck) != 0 and not (isOnDelPhase or isOnDrawPhase):
-        check = discardPile[-1]
-        deck = allSavedDeck[0]
-        allSavedDeck = []
-        drawPile = deck.drawPile
-        onTable = deck.onTable
-        inHand = deck.inHand
-        inOpponentHand = deck.inOpponentHand
-        discardPile = deck.inDiscardPile
-        if check != discardPile[-1]:
-            isOnDrawPhase = True
-def undo():
-    global deck, allSavedDeck, onTable, drawPile, discardPile, inOpponentHand, inHand, isOnDrawPhase
-    if len(allSavedDeck) != 0 and not (isOnDelPhase or isOnDrawPhase):
-        check = discardPile[-1]
-        deck = allSavedDeck.pop()
-        drawPile = deck.drawPile
-        onTable = deck.onTable
-        inHand = deck.inHand
-        inOpponentHand = deck.inOpponentHand
-        discardPile = deck.inDiscardPile
-        if check != discardPile[-1]:
-            isOnDrawPhase = True
 
-def getScaledMousePosUI():
-    mouse_x, mouse_y = pygame.mouse.get_pos()
-    scale_x = resoCible[0] / resolution[0]
-    scale_y = resoCible[1] / resolution[1]
-    return ((mouse_x - offsets[0]) * scale_x, (mouse_y - offsets[1]) * scale_y)
-
-
-def getScaledMousePosCards():
-    mouse_x, mouse_y = pygame.mouse.get_pos()
-    scale_x = resoCible[0] * 2 / resolution[0]
-    scale_y = resoCible[1] * 2 / resolution[1]
-    return (
-        int((mouse_x - offsets[0]) * scale_x),
-        int((mouse_y - offsets[1]) * scale_y),
-    )
-
-
-def bloomCombination(combinationNumber: int):
-    global onTable
-    combination = onTable[combinationNumber]
-    x = combinationNumber
-    row = x // 11
-    if row == 0:
-        rect = pygame.Rect(
-            43 * 2 + (x % 11) * 42, 52 * 2, 37, 15 * len(combination) + 37
-        )
-    elif row == 1:
-        rect = pygame.Rect(
-            43 * 2 + (x % 11) * 42,
-            52 * 2 + +(15 * len(onTable[x - 11]) + 55),
-            37,
-            15 * len(combination) + 37,
-        )
-    else:
-        rect = pygame.Rect(
-            43 * 2 + (x % 11) * 42,
-            52 * 2
-            + (15 * len(onTable[x - 11]) + 55)
-            + (15 * len(onTable[x - 22]) + 55),
-            37,
-            15 * len(combination) + 37,
-        )
-    if rect.collidepoint(getScaledMousePosCards()):
-        bloomSurface = pygame.Surface(
-            (rect.width + 10, rect.height + 10), pygame.SRCALPHA
-        )
-        pygame.draw.rect(
-            bloomSurface, (0, 150, 255, 100), bloomSurface.get_rect(), border_radius=8
-        )
-        CardsScreen.blit(bloomSurface, (rect.x - 5, rect.y - 5))
-
-
-def showCardOnTable(combinationNumber: int, cardPosition: int):
-    global onTable, selectedCard, isOnDelPhase
-    x = combinationNumber
-    y = cardPosition
-    row = x // 11
-    combination = onTable[combinationNumber]
-    if cardPosition < len(combination):
-        card = combination[cardPosition]
-        if selectedCard.card == None:
-            isFirst = False
-            if len(onTable[x]) == y + 1:
-                if row == 0:
-                    rect = pygame.Rect(43 * 2 + (x % 11) * 42, 52 * 2 + y * 15, 37, 52)
-                elif row == 1:
-                    rect = pygame.Rect(
-                        43 * 2 + (x % 11) * 42,
-                        52 * 2 + y * 15 + (15 * len(onTable[x - 11]) + 55),
-                        37,
-                        52,
-                    )
-                else:
-                    rect = pygame.Rect(
-                        43 * 2 + (x % 11) * 42,
-                        52 * 2
-                        + y * 15
-                        + (15 * len(onTable[x - 11]) + 55)
-                        + (15 * len(onTable[x - 22]) + 55),
-                        37,
-                        52,
-                    )
-                isFirst = True
-            else:
-                if row == 0:
-                    rect = pygame.Rect(43 * 2 + (x % 11) * 42, 52 * 2 + y * 15, 37, 15)
-                elif row == 1:
-                    rect = pygame.Rect(
-                        43 * 2 + (x % 11) * 42,
-                        52 * 2 + y * 15 + (15 * len(onTable[x - 11]) + 55),
-                        37,
-                        15,
-                    )
-                else:
-                    rect = pygame.Rect(
-                        43 * 2 + (x % 11) * 42,
-                        52 * 2
-                        + y * 15
-                        + (15 * len(onTable[x - 11]) + 55)
-                        + (15 * len(onTable[x - 22]) + 55),
-                        37,
-                        15,
-                    )
-            if (
-                rect.collidepoint(getScaledMousePosCards())
-                and not isOnDelPhase
-                and not isOnDrawPhase
-            ):
-                bloomSurface = pygame.Surface(
-                    (rect.width + 10, rect.height + (10 if isFirst else 18)),
-                    pygame.SRCALPHA,
-                )
-                pygame.draw.rect(
-                    bloomSurface,
-                    (0, 150, 255, 100),
-                    bloomSurface.get_rect(),
-                    border_radius=8,
-                )
-                CardsScreen.blit(bloomSurface, (rect.x - 5, rect.y - 5))
-        if row == 0:
-            card.show(CardsScreen, (43 * 2 + (x % 11) * 42, 52 * 2 + y * 15, 37, 52))
-        elif row == 1:
-            card.show(
-                CardsScreen,
-                (
-                    43 * 2 + (x % 11) * 42,
-                    52 * 2 + y * 15 + (15 * len(onTable[x - 11]) + 55),
-                    37,
-                    52,
-                ),
-            )
-        else:
-            card.show(
-                CardsScreen,
-                (
-                    43 * 2 + (x % 11) * 42,
-                    52 * 2
-                    + y * 15
-                    + (15 * len(onTable[x - 11]) + 55)
-                    + (15 * len(onTable[x - 22]) + 55),
-                    37,
-                    52,
-                ),
-            )
-
-
-def dropCardOnTable(card: Cards.Card, combinationNumber: int):
-    global selectedCard, onTable, allSavedDeck, savedDeck, doDropCard
-    combination = onTable[combinationNumber]
-    x = combinationNumber
-    row = x // 11
-    if row == 0:
-        rect = pygame.Rect(
-            43 * 2 + (x % 11) * 42, 52 * 2, 37, 15 * len(combination) + 37
-        )
-    elif row == 1:
-        rect = pygame.Rect(
-            43 * 2 + (x % 11) * 42,
-            52 * 2 + +(15 * len(onTable[x - 11]) + 55),
-            37,
-            15 * len(combination) + 37,
-        )
-    else:
-        rect = pygame.Rect(
-            43 * 2 + (x % 11) * 42,
-            52 * 2
-            + (15 * len(onTable[x - 11]) + 55)
-            + (15 * len(onTable[x - 22]) + 55),
-            37,
-            15 * len(combination) + 37,
-        )
-    if rect.collidepoint(getScaledMousePosCards()):
-        if selectedCard.card != None:
-            combination.append(card)
-            combination.sort(key=lambda card: (card.value, card.color))
-            if len(combination) != 6:
-                onTable[combinationNumber] = combination
-            else:
-                onTable[combinationNumber] = combination[:3]
-                onTable.insert(combinationNumber+1, combination[3:])
-            selectedCard.card = None
-            doDropCard = True
-
-
-def cardToMouse(card: Cards.Card):
-    card.show(
-        CardsScreen,
-        (
-            getScaledMousePosCards()[0] - mouseGrabOffset[0],
-            getScaledMousePosCards()[1] - mouseGrabOffset[1],
-        ),
-    )
-
-
-def isCorectCombination(combination: list[Cards.Card]) -> bool:
-    isCorect = False
-    # LES CARRES
-    if len(combination) == 4 or len(combination) == 3:
-        same_value = all(card.value == combination[0].value for card in combination)
-        different_colors = len(set(card.color for card in combination)) == len(
-            combination
-        )
-        isCorect = same_value and different_colors
-    # LES SUITES
-    if all(card.color == combination[0].color for card in combination):
-        combination.sort(key=lambda card: card.value)
-        index = combination[0].value
-        isCorect = True
-        for card in combination:
-            if card.value != index:
-                isCorect = False
-                break
-            index += 1
-        if combination[0].value == 1 and not isCorect:
-            combination[0].value = 14
-            combination.sort(key=lambda card: card.value)
-            index = combination[0].value
-            isCorect = True
-            for card in combination:
-                if card.value != index:
-                    isCorect = False
-                    break
-                index += 1
-    return isCorect
-
-
-def checkCombinations(allCombinations: list[list[Cards.Card]]) -> tuple:
-    for i in range(len(allCombinations)):
-        combination = allCombinations[i]
-        if len(combination) >= 3:
-            while len(combination) >= 6:
-                allCombinations.insert(
-                    i + 1, combination[len(combination) - 3 : len(combination)]
-                )
-                combination = combination[0 : len(combination) - 3]
-                allCombinations[i] = combination
-            if not isCorectCombination(combination):
-                return (False, [card.value for card in combination])
-        else:
-            return (False, [card.value for card in combination])
-    if cardDrawOnDiscardPile == None or not (cardDrawOnDiscardPile in inHand):
-        return (True, allCombinations)
-    return (False, allCombinations)
-
-
-def selectCardFromHand():
-    global \
-        selectedCard, \
-        mouseGrabOffset, \
-        inHand, \
-        isOnDelPhase, \
-        drawPile, \
-        deck, \
-        discardPile, \
-        isOnDrawPhase, \
-        savedDeck
-    for i in range(len(inHand)):
-        if pygame.Rect(
-            16 * 2 + i * 44 + (13 - len(inHand)) * 22, 215 * 2, 37, 52
-        ).collidepoint(getScaledMousePosCards()):
-            if not isOnDelPhase and not isOnDrawPhase:
-                savedDeck = deck.saveDeck()
-                selectedCard.card = inHand[i]
-                selectedCard.come = 0
-                selectedCard.y = i
-                mouseGrabOffset = (
-                    getScaledMousePosCards()[0]
-                    - (16 * 2 + i * 44 + (13 - len(inHand)) * 22),
-                    getScaledMousePosCards()[1] - 210 * 2,
-                )
-                inHand.remove(selectedCard.card)
-            elif isOnDelPhase:
-                discardPile.append(inHand.pop(i))
-                isOnDelPhase = False
-                isOnDrawPhase = True
-
-
-def suppEmptyCombinations():
-    global onTable
-    onTable = [combination for combination in onTable if len(combination) > 0]
 
     #   --- INITIALISATION PYGAME ---  #
-
-
 pygame.init()
+
+
 screen_info = pygame.display.Info()
 screen = pygame.display.set_mode(
     (screen_info.current_w, screen_info.current_h), pygame.FULLSCREEN
 )
-
 
 #   ----- ADAPTER RESOLUTION ----  #
 resoCible = [315, 250]
@@ -342,6 +36,7 @@ elif ratio > resoCible[1] / resoCible[0]:
 UIScreen = pygame.Surface((resoCible[0], resoCible[1]))
 CardsScreen = pygame.Surface((resolution[0], resolution[1]), pygame.SRCALPHA)
 RuleScreen = pygame.Surface((resoCible[0]*3, resoCible[1]*3), pygame.SRCALPHA)
+utils.init()
 
 #   --------- LES IMAGES --------  #
 backgroundMain = pygame.image.load("Assets/MainMenu/BackGround.png")
@@ -391,7 +86,7 @@ annimationPlayButton_isMouseOn = False
 def annimationPlayButton():
     global annimationPlayButton_actuelFrame, annimationPlayButton_isMouseOn
     actuelFrame = annimationPlayButton_actuelFrame
-    isMouseOn = playButton.rect.collidepoint(getScaledMousePosUI())
+    isMouseOn = playButton.rect.collidepoint(utils.getScaledMousePosUI())
     if isMouseOn and actuelFrame < len(playButtonTiles) - 1:
         actuelFrame += 1
         playButton.setImage(playButtonTiles[actuelFrame])
@@ -409,7 +104,7 @@ annimationTeamButton_isMouseOn = False
 def annimationTeamButton():
     global annimationTeamButton_actuelFrame, annimationTeamButton_isMouseOn
     actuelFrame = annimationTeamButton_actuelFrame
-    isMouseOn = teamButton.rect.collidepoint(getScaledMousePosUI())
+    isMouseOn = teamButton.rect.collidepoint(utils.getScaledMousePosUI())
     if isMouseOn and actuelFrame < len(teamButtonTiles) - 1:
         actuelFrame += 1
         teamButton.setImage(teamButtonTiles[actuelFrame])
@@ -427,7 +122,7 @@ annimationRuleButton_isMouseOn = False
 def annimationRuleButton():
     global annimationRuleButton_actuelFrame, annimationRuleButton_isMouseOn
     actuelFrame = annimationRuleButton_actuelFrame
-    isMouseOn = ruleButton.rect.collidepoint(getScaledMousePosUI())
+    isMouseOn = ruleButton.rect.collidepoint(utils.getScaledMousePosUI())
     if isMouseOn and actuelFrame < len(ruleButtonTiles) - 1:
         actuelFrame += 1
         ruleButton.setImage(ruleButtonTiles[actuelFrame])
@@ -445,7 +140,7 @@ annimationJeton1_isMouseOn = False
 def annimationJeton1():
     global annimationJeton1_actuelFrame, annimationJeton1_isMouseOn, jeton1
     actuelFrame = annimationJeton1_actuelFrame
-    isMouseOn = jeton1rect.collidepoint(getScaledMousePosUI())
+    isMouseOn = jeton1rect.collidepoint(utils.getScaledMousePosUI())
     if isMouseOn and actuelFrame < len(jeton1Tiles) - 1:
         actuelFrame += 1
         jeton1 = jeton1Tiles[actuelFrame]
@@ -463,7 +158,7 @@ annimationJeton2_isMouseOn = False
 def annimationJeton2():
     global annimationJeton2_actuelFrame, annimationJeton2_isMouseOn, jeton2
     actuelFrame = annimationJeton2_actuelFrame
-    isMouseOn = jeton2rect.collidepoint(getScaledMousePosUI())
+    isMouseOn = jeton2rect.collidepoint(utils.getScaledMousePosUI())
     if isMouseOn and actuelFrame < len(jeton2Tiles) - 1:
         actuelFrame += 1
         jeton2 = jeton2Tiles[actuelFrame]
@@ -488,7 +183,7 @@ def annimationDice():
         selectedCard
     if selectedCard.card == None and time.time() - annimationDice_lastFram > 0.1:
         actuelFrame = annimationDice_actuelFrame
-        isMouseOn = nextTurnButton.rect.collidepoint(getScaledMousePosUI())
+        isMouseOn = nextTurnButton.rect.collidepoint(utils.getScaledMousePosUI())
         if isMouseOn and actuelFrame < len(diceTiles) - 1:
             actuelFrame += 1
             nextTurnButton.setImage(diceTiles[actuelFrame])
@@ -527,7 +222,7 @@ def ruleButtonClic():
 
 def nextTurnButtonClic():
     global drawPile, onTable, isOnDelPhase, doDropCard, allSavedDeck, isOnDrawPhase
-    isOK, newTable = checkCombinations(deck.onTable)
+    isOK, newTable = Rami.checkCombinations(deck.onTable, cardDrawOnDiscardPile, inHand)
     if isOK and not (isOnDelPhase or isOnDrawPhase):
         onTable = newTable
         allSavedDeck = []
@@ -646,7 +341,7 @@ while run:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             for button in allButton:
                 button.isClic(resoCible, resolution, offsets)
-            selectCardFromHand()
+            Rami.selectCardFromHand(selectedCard, mouseGrabOffset, inHand, isOnDelPhase,drawPile, deck, discardPile,isOnDrawPhase,savedDeck)
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
             if isOnRuleScreen:
@@ -656,13 +351,13 @@ while run:
 
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             for i in range(len(onTable)):
-                dropCardOnTable(selectedCard.card, i)
+                Rami.dropCardOnTable(selectedCard.card, i, selectedCard, onTable, allSavedDeck, savedDeck, doDropCard)
                 if selectedCard.card == None:
                     allSavedDeck.append(savedDeck)
                     break
             if selectedCard.card != None:
                 if pygame.Rect(37 * 2, 60 * 2, 241 * 2, 138 * 2).collidepoint(
-                    getScaledMousePosCards()
+                    utils.getScaledMousePosCards()
                 ):
                     onTable.append([selectedCard.card])
                     allSavedDeck.append(savedDeck)
@@ -684,9 +379,9 @@ while run:
             selectedCard.card = None
         
         if event.type == pygame.KEYDOWN and event.key == pygame.K_z and (event.mod & pygame.KMOD_CTRL):
-            undo()
+            Rami.undo(deck, allSavedDeck, onTable, drawPile, discardPile, inOpponentHand, inHand, isOnDrawPhase, isOnDelPhase)
         elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-            resetTurn()
+            Rami.resetTurn(deck, allSavedDeck, onTable, drawPile, discardPile, inOpponentHand, inHand, isOnDrawPhase, isOnDelPhase)
 
     # LES GRAPHISMES
     UIScreen = pygame.transform.scale(UIScreen, (resoCible[0], resoCible[1]))
@@ -721,8 +416,9 @@ while run:
     else:
         UIScreen.blit(backgroundMain, (0, 0))
         drawPileButton.show(UIScreen)
-        if len(discardPile) != 0: discardPileButton.show(UIScreen)
-        discardPile[-1].show(UIScreen, (3, 99))
+        if len(discardPile) != 0:
+            discardPileButton.show(UIScreen)
+            discardPile[-1].show(UIScreen, (3, 99))
 
         if not isOnDelPhase and not isOnDrawPhase:
             nextTurnButton.show(UIScreen)
@@ -731,16 +427,16 @@ while run:
         # Les cartes sur la table
         for x in range(len(onTable)):
             if selectedCard.card != None:
-                bloomCombination(x)
+                Rami.bloomCombination(x, onTable, CardsScreen)
             for y in range(len(onTable[x])):
-                showCardOnTable(x, y)
+                Rami.showCardOnTable(x, y, onTable, selectedCard, isOnDelPhase, isOnDrawPhase, CardsScreen)
 
         # les cartes en main
         for i in range(len(inHand)):
             if (
                 pygame.Rect(
                     16 * 2 + i * 44 + (13 - len(inHand)) * 22, 215 * 2, 37, 52
-                ).collidepoint(getScaledMousePosCards())
+                ).collidepoint(utils.getScaledMousePosCards())
                 and selectedCard.card == None
             ):
                 inHand[i].show(
@@ -757,7 +453,7 @@ while run:
                 backCard,
                 (90 * 2 + i * 32 + (13 - len(inOpponentHand)) * 22, 4 * 2 + i * 3),
             )
-        cardToMouse(selectedCard.card) if selectedCard.card != None else None
+        Rami.cardToMouse(selectedCard.card, CardsScreen, mouseGrabOffset) if selectedCard.card != None else None
 
     UIScreen = pygame.transform.scale(UIScreen, (resolution[0], resolution[1]))
     CardsScreen = pygame.transform.scale(CardsScreen, (resolution[0], resolution[1]))
@@ -767,7 +463,7 @@ while run:
 
     screen.blit(UIScreen, (offsets[0], offsets[1]))
 
-    suppEmptyCombinations()
+    Rami.suppEmptyCombinations(onTable)
     deck.onTable = onTable
     deck.inHand = inHand
     deck.inOpponentHand = inOpponentHand
