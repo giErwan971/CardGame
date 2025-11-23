@@ -1,5 +1,6 @@
 from random import *
 import pygame
+from pygame.rect import Rect
 
 
 class Card:
@@ -12,6 +13,7 @@ class Card:
         self.bg = pygame.image.load(
             f"Assets/Cards/King's Cards/Suit Of {color}/{color}_{value}.png"
         )
+        pygame.transform.scale2x(self.bg)
 
     def getAll(self):
         return (self.value, self.color)
@@ -21,7 +23,8 @@ class Card:
     ):
         if bloomColor != (0, 0, 0, 0):
             bloomSurface = pygame.Surface(
-                (self.bg.get_width() + 10, self.bg.get_height() + 10), pygame.SRCALPHA
+                ((self.bg.get_width() + 10), (self.bg.get_height() + 10)),
+                pygame.SRCALPHA,
             )
             pygame.draw.rect(
                 bloomSurface, bloomColor, bloomSurface.get_rect(), border_radius=8
@@ -91,4 +94,3 @@ class cardSelected:
         self.come = come
         self.x = x
         self.y = y
-

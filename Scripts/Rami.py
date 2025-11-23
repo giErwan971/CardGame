@@ -3,8 +3,17 @@ import Cards
 from utils import *
 
 
-
-def resetTurn(deck, allSavedDeck, onTable, drawPile, discardPile, inOpponentHand, inHand, isOnDrawPhase, isOnDelPhase):
+def resetTurn(
+    deck,
+    allSavedDeck,
+    onTable,
+    drawPile,
+    discardPile,
+    inOpponentHand,
+    inHand,
+    isOnDrawPhase,
+    isOnDelPhase,
+):
     if len(allSavedDeck) != 0 and not (isOnDelPhase or isOnDrawPhase):
         check = discardPile[-1]
         deck = allSavedDeck[0]
@@ -16,7 +25,19 @@ def resetTurn(deck, allSavedDeck, onTable, drawPile, discardPile, inOpponentHand
         discardPile = deck.inDiscardPile
         if check != discardPile[-1]:
             isOnDrawPhase = True
-def undo(deck, allSavedDeck, onTable, drawPile, discardPile, inOpponentHand, inHand, isOnDrawPhase, isOnDelPhase):
+
+
+def undo(
+    deck,
+    allSavedDeck,
+    onTable,
+    drawPile,
+    discardPile,
+    inOpponentHand,
+    inHand,
+    isOnDrawPhase,
+    isOnDelPhase,
+):
     if len(allSavedDeck) != 0 and not (isOnDelPhase or isOnDrawPhase):
         check = discardPile[-1]
         deck = allSavedDeck.pop()
@@ -63,7 +84,15 @@ def bloomCombination(combinationNumber: int, onTable, CardsScreen):
         CardsScreen.blit(bloomSurface, (rect.x - 5, rect.y - 5))
 
 
-def showCardOnTable(combinationNumber: int, cardPosition: int, onTable, selectedCard, isOnDelPhase, isOnDrawPhase, CardsScreen):
+def showCardOnTable(
+    combinationNumber: int,
+    cardPosition: int,
+    onTable,
+    selectedCard,
+    isOnDelPhase,
+    isOnDrawPhase,
+    CardsScreen,
+):
     x = combinationNumber
     y = cardPosition
     row = x // 11
@@ -156,7 +185,15 @@ def showCardOnTable(combinationNumber: int, cardPosition: int, onTable, selected
             )
 
 
-def dropCardOnTable(card: Cards.Card, combinationNumber: int, selectedCard, onTable, allSavedDeck, savedDeck, doDropCard):
+def dropCardOnTable(
+    card: Cards.Card,
+    combinationNumber: int,
+    selectedCard,
+    onTable,
+    allSavedDeck,
+    savedDeck,
+    doDropCard,
+):
     combination = onTable[combinationNumber]
     x = combinationNumber
     row = x // 11
@@ -188,7 +225,7 @@ def dropCardOnTable(card: Cards.Card, combinationNumber: int, selectedCard, onTa
                 onTable[combinationNumber] = combination
             else:
                 onTable[combinationNumber] = combination[:3]
-                onTable.insert(combinationNumber+1, combination[3:])
+                onTable.insert(combinationNumber + 1, combination[3:])
             selectedCard.card = None
             doDropCard = True
 
@@ -235,7 +272,9 @@ def isCorectCombination(combination: list[Cards.Card]) -> bool:
     return isCorect
 
 
-def checkCombinations(allCombinations: list[list[Cards.Card]], cardDrawOnDiscardPile, inHand) -> tuple:
+def checkCombinations(
+    allCombinations: list[list[Cards.Card]], cardDrawOnDiscardPile, inHand
+) -> tuple:
     for i in range(len(allCombinations)):
         combination = allCombinations[i]
         if len(combination) >= 3:
@@ -254,7 +293,17 @@ def checkCombinations(allCombinations: list[list[Cards.Card]], cardDrawOnDiscard
     return (False, allCombinations)
 
 
-def selectCardFromHand(selectedCard, mouseGrabOffset, inHand, isOnDelPhase,drawPile, deck, discardPile,isOnDrawPhase,savedDeck):
+def selectCardFromHand(
+    selectedCard,
+    mouseGrabOffset,
+    inHand,
+    isOnDelPhase,
+    drawPile,
+    deck,
+    discardPile,
+    isOnDrawPhase,
+    savedDeck,
+):
     for i in range(len(inHand)):
         if pygame.Rect(
             16 * 2 + i * 44 + (13 - len(inHand)) * 22, 215 * 2, 37, 52
@@ -275,5 +324,7 @@ def selectCardFromHand(selectedCard, mouseGrabOffset, inHand, isOnDelPhase,drawP
                 isOnDelPhase = False
                 isOnDrawPhase = True
 
+
 def suppEmptyCombinations(onTable):
     onTable = [combination for combination in onTable if len(combination) > 0]
+
