@@ -6,7 +6,7 @@ def playTurn(deck: Deck) -> list[Card]:
     if len(deck.inDiscardPile) > 0:
         deck.inOpponentHand.append(deck.inDiscardPile.pop())
     selectedCard = []
-    selectedCard = DropTripleCard(deck)
+    deck = DropTripleCard(deck)
 
     print("Selected Cards:")
     [print(card.getAll()) for card in selectedCard]
@@ -19,7 +19,7 @@ def playTurn(deck: Deck) -> list[Card]:
     return selectedCard
 
 
-def DropTripleCard(deck: Deck) -> list[Card]:
+def DropTripleCard(deck: Deck) -> Deck:
     # LES CARRES
 
     deck.inOpponentHand.sort(key=lambda card: card.value)
@@ -38,7 +38,9 @@ def DropTripleCard(deck: Deck) -> list[Card]:
             cards.append([card])
     for cardNumber in cards:
         if len(cardNumber) >= 3:
-            return cardNumber
+            deck.onTable.append(cardNumber)
+            return deck
+            # return cardNumber
 
     # SUITE
 
@@ -75,11 +77,41 @@ def DropTripleCard(deck: Deck) -> list[Card]:
                 lastValue = 0
                 suiteCards.clear()
         if suiteCount >= 3:
-            return suiteCards
-    return []
+            deck.onTable.append(suiteCards)
+            return deck
+    return deck
 
 
 def DropLess(deck: Deck) -> Deck:
+    deck.inOpponentHand.sort(key=lambda card: card.value)
+
+    for cardCombinaison in deck.onTable:
+        # Vérifie si c'est une suite ou non
+        if len(cardCombinaison) < 2:
+            continue
+        if cardCombinaison[0].value == cardCombinaison[1].value:
+            cards: list[Card] = []
+            for card in deck.inOpponentHand:
+                if card.value == cardCombinaison[0].value:
+                    cards.append(card)
+            if len(cards) > 0:
+                [cardCombinaison.append(card) for card in cards]
+                return deck
+        else:
+            lastCardSuite = cardCombinaison[len(cardCombinaison) - 1]
+            cards: list[Card] = []
+            for card in deck.inOpponentHand:
+                if lastCardSuite.color != card.color:
+                    continue
+                if len(cards) == 0:
+                    if lastCardSuite.value != card.value - 1:
+                        continue
+                    cards.append(card)
+                if cards[len(cards) - 1].value == card.value - 1:
+                    cards.append(card)
+            if len(cards) > 0:
+                [cardCombinaison.append(card) for card in cards]
+                return deck
     return deck
 
 
@@ -87,13 +119,15 @@ def TreeFinding(deck: Deck) -> Deck:
     return deck
 
 
-
 if __name__ == "__main__":
+    print("Bot test:")
     test_deck = Deck()
-    test_deck.shuffleDeck()
-    # test_deck.drawPile.sort(key=lambda card: card.value)
-    for i in range(10):
-        # test_card = Card(i + 1, "Spades", 0)
-        # test_deck.inOpponentHand.append(test_card)
-        test_deck.inOpponentHand.append(test_deck.pickCard())
-    playTurn(test_deck)
+    # test_deck.shuffleDeck()
+    test_deck.onTable.append([Card(2, "Spades", 0) for _ in range(2)])
+    test_deck.drawPile.sort(key=lambda card: card.value)
+    for i in range(2):
+        test_card = Card(2, "Spades", 0)
+        test_deck.inOpponentHand.append(test_card)
+        # test_deck.inOpponentHand.append(test_deck.pickCard())
+    # playTurn(test_deck)
+    DropLess(test_deck)
