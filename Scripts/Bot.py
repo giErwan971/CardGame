@@ -87,11 +87,13 @@ def TreeFinding(deck: Deck) -> Deck:
     return deck
 
 
-test_deck = Deck()
-test_deck.shuffleDeck()
-# test_deck.drawPile.sort(key=lambda card: card.value)
-for i in range(10):
-    # test_card = Card(i + 1, "Spades", 0)
-    # test_deck.inOpponentHand.append(test_card)
-    test_deck.inOpponentHand.append(test_deck.pickCard())
-playTurn(test_deck)
+
+if __name__ == "__main__":
+    test_deck = Deck()
+    test_deck.shuffleDeck()
+    # test_deck.drawPile.sort(key=lambda card: card.value)
+    for i in range(10):
+        # test_card = Card(i + 1, "Spades", 0)
+        # test_deck.inOpponentHand.append(test_card)
+        test_deck.inOpponentHand.append(test_deck.pickCard())
+    playTurn(test_deck)

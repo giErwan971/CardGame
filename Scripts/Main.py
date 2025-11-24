@@ -3,7 +3,7 @@ import UI
 import Cards
 import Rami
 import utils
-
+import Bot
 # from win32api import GetSystemMetrics
 import time
 # numpy est neccessaire pour la fonction bloomCombination mais pas besion d'import
@@ -37,7 +37,7 @@ elif ratio > resoCible[1] / resoCible[0]:
 UIScreen = pygame.Surface((resoCible[0], resoCible[1]))
 CardsScreen = pygame.Surface((resolution[0], resolution[1]), pygame.SRCALPHA)
 RuleScreen = pygame.Surface((resoCible[0] * 3, resoCible[1] * 3), pygame.SRCALPHA)
-utils.init()
+utils.init(resoCible, resolution, offsets)
 
 #   --------- LES IMAGES --------  #
 backgroundMain = pygame.image.load("Assets/MainMenu/BackGround.png")
@@ -77,6 +77,9 @@ drawPileAssets = pygame.image.load(
     "Assets/Cards/King's Cards/Back And Joker/DrawPile.png"
 )
 backCard = pygame.image.load("Assets/Cards/King's Cards/Back And Joker/Back_1.png")
+
+victory = pygame.image.load("Assets/MainMenu/Victory.png")
+defeat = pygame.image.load("Assets/MainMenu/Defeat.png")
 
 
 #   ------ LES ANNIMATIONS ------  #
@@ -223,36 +226,44 @@ def ruleButtonClic():
 
 
 def nextTurnButtonClic():
-    global drawPile, onTable, isOnDelPhase, doDropCard, allSavedDeck, isOnDrawPhase
-    isOK, newTable = Rami.checkCombinations(deck.onTable, cardDrawOnDiscardPile, inHand)
+    global isOnDelPhase, doDropCard, allSavedDeck, isOnDrawPhase, deck, whoWin, UIScreen, run
+    isOK, newTable = Rami.checkCombinations(deck.onTable, cardDrawOnDiscardPile, deck.inHand)
     if isOK and not (isOnDelPhase or isOnDrawPhase):
-        onTable = newTable
+        deck.onTable = newTable
         allSavedDeck = []
         if not doDropCard:
             isOnDelPhase = True
         else:
+            #deck = Bot.playTurn(deck)
             isOnDrawPhase = True
         doDropCard = False
+        if len(deck.inHand) == 0:
+            whoWin = "Player"
+            UIScreen.blit(victory, (91, 95))
+            run = False
 
 
 def drawPileButtonClic():
-    global inHand, drawPile, isOnDrawPhase, cardDrawOnDiscardPile, allSavedDeck, deck
+    global isOnDrawPhase, cardDrawOnDiscardPile, allSavedDeck, deck, pickedCard
     if isOnDrawPhase:
         cardDrawOnDiscardPile = None
-        inHand.append(drawPile.pop())
+        pickedCard = deck.drawPile.pop()
+        deck.inHand.append(pickedCard)
         isOnDrawPhase = False
-        inHand.sort(key=lambda c: (c.color, c.value))
+        deck.inHand.sort(key=lambda c: (c.color, c.value))
         allSavedDeck = [deck.saveDeck()]
 
 
-def discardPileButton():
-    global inHand, discardPile, isOnDrawPhase, cardDrawOnDiscardPile, deck, allSavedDeck
+
+def inDiscardPileButton():
+    global isOnDrawPhase, cardDrawOnDiscardPile, deck, allSavedDeck, pickedCard
     if isOnDrawPhase:
         allSavedDeck = [deck.saveDeck()]
-        cardDrawOnDiscardPile = discardPile.pop()
-        inHand.append(cardDrawOnDiscardPile)
+        cardDrawOnDiscardPile = deck.inDiscardPile.pop()
+        pickedCard = cardDrawOnDiscardPile
+        deck.inHand.append(cardDrawOnDiscardPile)
         isOnDrawPhase = False
-        inHand.sort(key=lambda c: (c.color, c.value))
+        deck.inHand.sort(key=lambda c: (c.color, c.value))
 
 
 # LES BOUTONS
@@ -291,12 +302,12 @@ drawPileButton = UI.Button(
     drawPileAssets,
     drawPileButtonClic,
 )
-discardPileButton = UI.Button(
+inDiscardPileButton = UI.Button(
     pygame.Rect(3, 99, 37, 60),
     (0, 0),
     "DiscardPileButton",
     drawPileAssets,
-    discardPileButton,
+    inDiscardPileButton,
 )
 allButton = [
     playButton,
@@ -304,7 +315,7 @@ allButton = [
     ruleButton,
     nextTurnButton,
     drawPileButton,
-    discardPileButton,
+    inDiscardPileButton,
 ]
 
 #   ------- BOUCLE DE JEU -------  #
@@ -314,7 +325,7 @@ for i in range(13):
     cardTest = deck.pickCard()
     deck.inHand.append(cardTest)
 deck.inHand.sort(key=lambda c: (c.color, c.value))
-for i in range(10):
+for i in range(13):
     cardTest = deck.pickCard()
     deck.inOpponentHand.append(cardTest)
 deck.inDiscardPile.append(deck.pickCard())
@@ -331,13 +342,15 @@ cardDrawOnDiscardPile: Cards.Card = None
 mouseGrabOffset = [0, 0]
 savedDeck = None
 allSavedDeck: list[Cards.Deck] = []
+pickedCard = None
+whoWin = None
 while run:
-    drawPile = deck.drawPile
-    onTable = deck.onTable
-    inHand = deck.inHand
-    inOpponentHand = deck.inOpponentHand
-    discardPile = deck.inDiscardPile
-
+    if len(deck.drawPile) == 0:
+        tmp = deck.inDiscardPile.pop()
+        deck.drawPile = deck.inDiscardPile.copy()
+        deck.inDiscardPile = []
+        deck.shuffleDeck()
+        deck.inDiscardPile.append(tmp)
     # LES EVENTS
     for event in pygame.event.get():
         if (
@@ -350,17 +363,18 @@ while run:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             for button in allButton:
                 button.isClic(resoCible, resolution, offsets)
-            Rami.selectCardFromHand(
+            savedDeck, mouseGrabOffset, isOnDrawPhase, isOnDelPhase, selectedCard, deck, isLose = Rami.selectCardFromHand(
                 selectedCard,
                 mouseGrabOffset,
-                inHand,
+                deck.inHand,
                 isOnDelPhase,
-                drawPile,
                 deck,
-                discardPile,
+                deck.inDiscardPile,
                 isOnDrawPhase,
                 savedDeck,
             )
+            if isLose:
+                whoWin = "Bot"
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
             if isOnRuleScreen:
@@ -369,14 +383,12 @@ while run:
                     button.isActive = True
 
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-            for i in range(len(onTable)):
-                Rami.dropCardOnTable(
+            for i in range(len(deck.onTable)):
+                doDropCard = Rami.dropCardOnTable(
                     selectedCard.card,
                     i,
                     selectedCard,
-                    onTable,
-                    allSavedDeck,
-                    savedDeck,
+                    deck.onTable,
                     doDropCard,
                 )
                 if selectedCard.card == None:
@@ -386,12 +398,12 @@ while run:
                 if pygame.Rect(37 * 2, 60 * 2, 241 * 2, 138 * 2).collidepoint(
                     utils.getScaledMousePosCards()
                 ):
-                    onTable.append([selectedCard.card])
+                    deck.onTable.append([selectedCard.card])
                     allSavedDeck.append(savedDeck)
                 elif selectedCard.come == 0:
-                    inHand.insert(selectedCard.y, selectedCard.card)
+                    deck.inHand.insert(selectedCard.y, selectedCard.card)
                 else:
-                    onTable = savedDeck.onTable
+                    deck.onTable = savedDeck.deck.onTable
             selectedCard.card = None
 
         if (
@@ -400,9 +412,9 @@ while run:
             and selectedCard.card != None
         ):
             if selectedCard.come == 0:
-                inHand.insert(selectedCard.y, selectedCard.card)
+                deck.inHand.insert(selectedCard.y, selectedCard.card)
             else:
-                onTable = savedDeck.onTable
+                deck.onTable = savedDeck.deck.onTable
             selectedCard.card = None
 
         if (
@@ -410,26 +422,18 @@ while run:
             and event.key == pygame.K_z
             and (event.mod & pygame.KMOD_CTRL)
         ):
-            Rami.undo(
+            deck, isOnDrawPhase, allSavedDeck = Rami.undo(
                 deck,
                 allSavedDeck,
-                onTable,
-                drawPile,
-                discardPile,
-                inOpponentHand,
-                inHand,
+                deck.inDiscardPile,
                 isOnDrawPhase,
                 isOnDelPhase,
             )
         elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-            Rami.resetTurn(
+            deck, isOnDrawPhase, allSavedDeck = Rami.resetTurn(
                 deck,
                 allSavedDeck,
-                onTable,
-                drawPile,
-                discardPile,
-                inOpponentHand,
-                inHand,
+                deck.inDiscardPile,
                 isOnDrawPhase,
                 isOnDelPhase,
             )
@@ -470,51 +474,76 @@ while run:
 
     else:
         UIScreen.blit(backgroundMain, (0, 0))
+        if isOnDrawPhase:
+            bloomSurface = pygame.Surface(
+                ((drawPileButton.rect.width + 10), (drawPileButton.rect.height + 10)),
+                pygame.SRCALPHA,
+            )
+            pygame.draw.rect(
+                bloomSurface, (0, 255, 150, 100), bloomSurface.get_rect(), border_radius=8
+            )
+            UIScreen.blit(bloomSurface, (drawPileButton.rect.x - 5, drawPileButton.rect.y - 5))
         drawPileButton.show(UIScreen)
-        if len(discardPile) != 0:
-            discardPileButton.show(UIScreen)
-            discardPile[-1].show(UIScreen, (3, 99))
+        if len(deck.inDiscardPile) != 0:
+            if isOnDrawPhase:
+                bloomSurface = pygame.Surface(
+                    ((inDiscardPileButton.rect.width + 10), (inDiscardPileButton.rect.height + 10)),
+                    pygame.SRCALPHA,
+                )
+                pygame.draw.rect(
+                    bloomSurface, (0, 255, 150, 100), bloomSurface.get_rect(), border_radius=8
+                )
+                UIScreen.blit(bloomSurface, (inDiscardPileButton.rect.x - 5, inDiscardPileButton.rect.y - 5))
+            inDiscardPileButton.show(UIScreen)
+            deck.inDiscardPile[-1].show(UIScreen, (3, 99))
 
         if not isOnDelPhase and not isOnDrawPhase:
             nextTurnButton.show(UIScreen)
             annimationDice()
 
         # Les cartes sur la table
-        for x in range(len(onTable)):
+        for x in range(len(deck.onTable)):
             if selectedCard.card != None:
-                Rami.bloomCombination(x, onTable, CardsScreen)
-            for y in range(len(onTable[x])):
+                Rami.bloomCombination(x, deck.onTable, CardsScreen)
+            for y in range(len(deck.onTable[x])):
                 Rami.showCardOnTable(
                     x,
                     y,
-                    onTable,
+                    deck.onTable,
                     selectedCard,
                     isOnDelPhase,
                     isOnDrawPhase,
                     CardsScreen,
                 )
-
         # les cartes en main
-        for i in range(len(inHand)):
+        for i in range(len(deck.inHand)):
             if (
                 pygame.Rect(
-                    16 * 2 + i * 44 + (13 - len(inHand)) * 22, 215 * 2, 37, 52
+                    16 * 2 + i * 44 + (13 - len(deck.inHand)) * 22, 215 * 2, 37, 52
                 ).collidepoint(utils.getScaledMousePosCards())
-                and selectedCard.card == None
+                and selectedCard.card == None and not isOnDrawPhase
             ):
-                inHand[i].show(
+                deck.inHand[i].show(
                     CardsScreen,
-                    (16 * 2 + i * 44 + (13 - len(inHand)) * 22, 210 * 2),
+                    (16 * 2 + i * 44 + (13 - len(deck.inHand)) * 22, 210 * 2),
                     (0, 150, 255, 100) if not isOnDelPhase else (255, 0, 0, 100),
                 )
-            else:
-                inHand[i].show(
-                    CardsScreen, (16 * 2 + i * 44 + (13 - len(inHand)) * 22, 215 * 2)
+            
+            elif deck.inHand[i] == pickedCard:
+                deck.inHand[i].show(
+                    CardsScreen,
+                    (16 * 2 + i * 44 + (13 - len(deck.inHand)) * 22, 215 * 2),
+                    (0, 255, 150, 100),
                 )
-        for i in range(len(inOpponentHand)):
+            else:
+                deck.inHand[i].show(
+                    CardsScreen, (16 * 2 + i * 44 + (13 - len(deck.inHand)) * 22, 215 * 2)
+                )
+            
+        for i in range(len(deck.inOpponentHand)):
             CardsScreen.blit(
                 backCard,
-                (90 * 2 + i * 32 + (13 - len(inOpponentHand)) * 22, 4 * 2 + i * 3),
+                (90 * 2 + i * 32 + (13 - len(deck.inOpponentHand)) * 22, 4 * 2 + i * 3),
             )
         Rami.cardToMouse(
             selectedCard.card, CardsScreen, mouseGrabOffset
@@ -527,14 +556,28 @@ while run:
 
     screen.blit(UIScreen, (offsets[0], offsets[1]))
 
-    Rami.suppEmptyCombinations(onTable)
-    deck.onTable = onTable
-    deck.inHand = inHand
-    deck.inOpponentHand = inOpponentHand
-    deck.drawPile = drawPile
-    deck.inDiscardPile = discardPile
+    deck.onTable = Rami.suppEmptyCombinations(deck.onTable)
 
     pygame.display.flip()
     time.sleep(0.01)
 
+if whoWin != None:
+    run = True
+    UIScreen = pygame.transform.scale(UIScreen, (resoCible[0], resoCible[1]))
+    UIScreen.blit(backgroundMain, (0, 0))
+    if whoWin == "Player":
+        UIScreen.blit(victory, (91, 95))
+    else:
+        UIScreen.blit(defeat, (91, 95))
+    UIScreen = pygame.transform.scale(UIScreen, (resolution[0], resolution[1]))
+    screen.blit(UIScreen, (offsets[0], offsets[1]))
+    pygame.display.flip()
+while run:
+    for event in pygame.event.get():
+        if (
+            event.type == pygame.QUIT
+            or event.type == pygame.KEYDOWN
+            and event.key == pygame.K_ESCAPE
+        ):
+            run = False
 pygame.quit()

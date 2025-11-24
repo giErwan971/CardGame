@@ -1,16 +1,13 @@
 import pygame
 import Cards
 from utils import *
+import Bot
 
 
 def resetTurn(
     deck,
     allSavedDeck,
-    onTable,
-    drawPile,
     discardPile,
-    inOpponentHand,
-    inHand,
     isOnDrawPhase,
     isOnDelPhase,
 ):
@@ -18,36 +15,26 @@ def resetTurn(
         check = discardPile[-1]
         deck = allSavedDeck[0]
         allSavedDeck = []
-        drawPile = deck.drawPile
-        onTable = deck.onTable
-        inHand = deck.inHand
-        inOpponentHand = deck.inOpponentHand
-        discardPile = deck.inDiscardPile
-        if check != discardPile[-1]:
+        if check != deck.inDiscardPile[-1]:
             isOnDrawPhase = True
+    return (deck, isOnDrawPhase, allSavedDeck)
+        
 
 
 def undo(
     deck,
     allSavedDeck,
-    onTable,
-    drawPile,
     discardPile,
-    inOpponentHand,
-    inHand,
     isOnDrawPhase,
     isOnDelPhase,
 ):
     if len(allSavedDeck) != 0 and not (isOnDelPhase or isOnDrawPhase):
         check = discardPile[-1]
+        print(allSavedDeck)
         deck = allSavedDeck.pop()
-        drawPile = deck.drawPile
-        onTable = deck.onTable
-        inHand = deck.inHand
-        inOpponentHand = deck.inOpponentHand
-        discardPile = deck.inDiscardPile
-        if check != discardPile[-1]:
+        if check != deck.inDiscardPile[-1]:
             isOnDrawPhase = True
+    return (deck, isOnDrawPhase, allSavedDeck)
 
 
 def bloomCombination(combinationNumber: int, onTable, CardsScreen):
@@ -190,8 +177,6 @@ def dropCardOnTable(
     combinationNumber: int,
     selectedCard,
     onTable,
-    allSavedDeck,
-    savedDeck,
     doDropCard,
 ):
     combination = onTable[combinationNumber]
@@ -228,6 +213,7 @@ def dropCardOnTable(
                 onTable.insert(combinationNumber + 1, combination[3:])
             selectedCard.card = None
             doDropCard = True
+    return (doDropCard)
 
 
 def cardToMouse(card: Cards.Card, CardsScreen, mouseGrabOffset):
@@ -298,7 +284,6 @@ def selectCardFromHand(
     mouseGrabOffset,
     inHand,
     isOnDelPhase,
-    drawPile,
     deck,
     discardPile,
     isOnDrawPhase,
@@ -320,11 +305,16 @@ def selectCardFromHand(
                 )
                 inHand.remove(selectedCard.card)
             elif isOnDelPhase:
-                discardPile.append(inHand.pop(i))
+                deck.inDiscardPile.append(inHand.pop(i))
                 isOnDelPhase = False
+                #deck = Bot.playTurn(deck)
+                if len(deck.inOpponentHand) == 0:
+                    return (savedDeck, mouseGrabOffset, isOnDrawPhase, isOnDelPhase, selectedCard, deck, True)
                 isOnDrawPhase = True
+    return (savedDeck, mouseGrabOffset, isOnDrawPhase, isOnDelPhase, selectedCard, deck, False)
 
 
 def suppEmptyCombinations(onTable):
     onTable = [combination for combination in onTable if len(combination) > 0]
+    return onTable
 

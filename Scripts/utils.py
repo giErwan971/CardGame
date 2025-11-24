@@ -5,21 +5,12 @@ resoCible = None
 resolution = None
 offsets = None
 
-def init():
+def init(resoCibleParam, resolutionParam, offsetsParam):
     global screen_info, resoCible, resolution, offsets
     screen_info = pygame.display.Info()
-    resoCible = [315, 250]
-    resolution = [screen_info.current_w, screen_info.current_h]
-    offsets = [0, 0]
-    ratio = resolution[0] / resolution[1]
-    if ratio > resoCible[0] / resoCible[1]:
-        lastW = resolution[0]
-        resolution[0] = resolution[1] / resoCible[1] * resoCible[0]
-        offsets[0] = (lastW - resolution[0]) / 2
-    elif ratio > resoCible[1] / resoCible[0]:
-        lastH = resolution[1]
-        resolution[1] = resolution[0] / resoCible[0] * resoCible[1]
-        offsets[1] = lastH - resolution[1] / 2
+    resoCible = resoCibleParam
+    resolution = resolutionParam
+    offsets = offsetsParam
 
 
 
