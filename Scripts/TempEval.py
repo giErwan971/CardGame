@@ -1,4 +1,5 @@
 import Cards
+import Bot
 
 def polyvalenceCombinatoire(deck: Cards.Deck, checkCard: Cards.Card):
     compSuite = [checkCard]
@@ -65,9 +66,17 @@ def nbPose(deck: Cards.Deck, checkCard: Cards.Card):
     Simule l'impact de cette carte sur le nombre de poses possibles.
     Plus on peut poser de cartes, mieux c'est.
     """
-    start = len(deck.inOpponentHand)
-    # Simuler tour avec la carte actuelle
-    end = len(deck.inOpponentHand)
+    newDeck = Cards.Deck(
+        allCards=deck.allCards.copy(),
+        drawPile=deck.drawPile.copy(),
+        onTable=deck.onTable.copy(),
+        inHand=deck.inHand.copy(),
+        inOpponentHand=deck.inOpponentHand.copy(),
+        inDiscardPile=deck.inDiscardPile.copy())
+    
+    start = len(newDeck.inOpponentHand)
+    newDeck = Bot.playTurn(newDeck)
+    end = len(newDeck.inOpponentHand)
     score1 = start - end
     
     newDeck = Cards.Deck(
@@ -79,14 +88,15 @@ def nbPose(deck: Cards.Deck, checkCard: Cards.Card):
         inDiscardPile=deck.inDiscardPile.copy())
     newDeck.inOpponentHand.append(newDeck.inDiscardPile.pop())
     start = len(newDeck.inOpponentHand)
-    # Simuler tour sans la carte
+    newDeck = Bot.playTurn(newDeck)
     end = len(newDeck.inOpponentHand)
     score2 = start - end
     
-    difference = score1 - score2
+    difference = (score1 - score2) + 1
+    print(f"NbPose difference: {difference}")
     
     # RÉAJUSTEMENT : bonus jusqu'à 25 max pour nbPose
-    return min(difference * 6, 25)
+    return min(difference * 6, 25), difference
 
 
 def evaluateCardPlacement(deck: Cards.Deck, checkCard: Cards.Card):
@@ -113,7 +123,7 @@ def evaluateCardPlacement(deck: Cards.Deck, checkCard: Cards.Card):
     totalScore += doublonScore
     
     # Composante 4 : Impact pose (0 à +25)
-    poseScore = nbPose(deck, checkCard)
+    poseScore, diff = nbPose(deck, checkCard)
     print(f"Pose score: {poseScore}")
     totalScore += poseScore
     
@@ -122,7 +132,7 @@ def evaluateCardPlacement(deck: Cards.Deck, checkCard: Cards.Card):
     # Maximum possible : 40 + 20 + 25 = 85 → devient 100
     totalScore = round((totalScore+25)/110 * 100, 2)
     
-    return totalScore
+    return totalScore, diff
 
 
 def Test():
@@ -131,10 +141,11 @@ def Test():
     deck.inOpponentHand = [deck.pickCard() for _ in range(7)]
     deck.inDiscardPile = [deck.pickCard() for _ in range(1)]
     moy = 0
+    moy2 =0
     for card in deck.drawPile:
-        score = evaluateCardPlacement(deck, card)
-        print([_card.getAll() for _card in deck.inOpponentHand])
-        print(f"Card: {card.getAll()}, Score: {score}")
+        score, diff = evaluateCardPlacement(deck, card)
         moy += score
+        moy2 += diff
     print(f"Average score: {moy / len(deck.drawPile)}")
+    print(f"Average diff: {moy2 / len(deck.drawPile)}")
 Test()

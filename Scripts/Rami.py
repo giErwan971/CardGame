@@ -307,7 +307,7 @@ def selectCardFromHand(
             elif isOnDelPhase:
                 deck.inDiscardPile.append(inHand.pop(i))
                 isOnDelPhase = False
-                #deck = Bot.playTurn(deck)
+                deck = Bot.playTurn(deck)
                 if len(deck.inOpponentHand) == 0:
                     return (savedDeck, mouseGrabOffset, isOnDrawPhase, isOnDelPhase, selectedCard, deck, True)
                 isOnDrawPhase = True

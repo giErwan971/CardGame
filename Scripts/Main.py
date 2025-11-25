@@ -234,7 +234,7 @@ def nextTurnButtonClic():
         if not doDropCard:
             isOnDelPhase = True
         else:
-            #deck = Bot.playTurn(deck)
+            deck = Bot.playTurn(deck)
             isOnDrawPhase = True
         doDropCard = False
         if len(deck.inHand) == 0:
