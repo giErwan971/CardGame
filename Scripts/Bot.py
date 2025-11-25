@@ -26,7 +26,6 @@ def playTurn(deck: Deck) -> list[Card]:
         deck.inOpponentHand.remove(drawCard)
         deck.inDiscardPile.append(drawCard)
 
-
     # selectedCard = DropLess(deck)
     # selectedCard = TreeFinding(deck)
     # for card in deck.inOpponentHand:
@@ -54,6 +53,9 @@ def DropTripleCard(deck: Deck) -> Deck:
             cards.append([card])
     for cardNumber in cards:
         if len(cardNumber) >= 3:
+            if len(set(card.color for card in cardNumber)) != len(cardNumber):
+                continue
+            [deck.inOpponentHand.remove(card) for card in cardNumber]
             deck.onTable.append(cardNumber)
             return deck
             # return cardNumber
@@ -93,12 +95,16 @@ def DropTripleCard(deck: Deck) -> Deck:
                 lastValue = 0
                 suiteCards.clear()
         if suiteCount >= 3:
+            [deck.inOpponentHand.remove(card) for card in suiteCards]
+
             deck.onTable.append(suiteCards)
+            print("find tree true")
             return deck
     return deck
 
 
 def DropLess(deck: Deck) -> Deck:
+    print("drop less")
     deck.inOpponentHand.sort(key=lambda card: card.value)
 
     for cardCombinaison in deck.onTable:
@@ -111,6 +117,11 @@ def DropLess(deck: Deck) -> Deck:
                 if card.value == cardCombinaison[0].value:
                     cards.append(card)
             if len(cards) > 0:
+                if len(set(card.color for card in cards + cardCombinaison)) != len(
+                    cards + cardCombinaison
+                ):
+                    continue
+                [deck.inOpponentHand.remove(card) for card in cards]
                 [cardCombinaison.append(card) for card in cards]
                 return deck
         else:
@@ -126,6 +137,8 @@ def DropLess(deck: Deck) -> Deck:
                 if cards[len(cards) - 1].value == card.value - 1:
                     cards.append(card)
             if len(cards) > 0:
+                print("drop less true")
+                [deck.inOpponentHand.remove(card) for card in cards]
                 [cardCombinaison.append(card) for card in cards]
                 return deck
     return deck
@@ -133,14 +146,14 @@ def DropLess(deck: Deck) -> Deck:
 
 def polyvalenceCombinatoire(deck: Deck, checkCard: Card):
     compSuite = [checkCard]
-    cartes_proches = 0      # Cartes à ±1 ou ±2
-    cartes_moyennes = 0     # Cartes à ±3 à ±5
-    cartes_lointaines = 0   # Cartes à ±6+
-    
+    cartes_proches = 0  # Cartes à ±1 ou ±2
+    cartes_moyennes = 0  # Cartes à ±3 à ±5
+    cartes_lointaines = 0  # Cartes à ±6+
+
     for card in deck.inOpponentHand:
         if card.color == checkCard.color and card.value != checkCard.value:
             distance = abs(card.value - checkCard.value)
-            
+
             if distance <= 2:
                 cartes_proches += 1
                 compSuite.append(card)
@@ -156,28 +169,28 @@ def polyvalenceCombinatoire(deck: Deck, checkCard: Card):
     score_suite += cartes_moyennes * 8
     score_suite += cartes_lointaines * 3
     print(f"Polyvalence suite score: {score_suite}")
-    
+
     compGroup = [checkCard]
     for card in deck.inOpponentHand:
         if card.value == checkCard.value and card.color != checkCard.color:
             compGroup.append(card)
-    score_group = (len(compGroup)-1) * 12
+    score_group = (len(compGroup) - 1) * 12
     print(f"Polyvalence group score: {score_group}")
-    
+
     # Max 40 points pour polyvalence (ce n'est qu'une composante)
     score_polyvalence = min(score_suite + score_group, 40)
     print(f"Total polyvalence score: {score_polyvalence}")
-    
+
     return (score_polyvalence, compSuite, compGroup)
 
 
 def positionDansSequence(deck: Deck, checkCard: Card, compSuite, compGroup):
     compSuite.sort(key=lambda x: x.value)
-    
+
     # Si groupe complet = très bon
     if len(compGroup) == 3:
         return 20  # Hausse de 10 à 20
-    
+
     if len(compSuite) >= 3:
         if checkCard != compSuite[0] and checkCard != compSuite[-1]:
             return 15  # Position INTERNE (hausse)
@@ -202,29 +215,31 @@ def nbPose(deck: Deck, checkCard: Card):
         onTable=deck.onTable.copy(),
         inHand=deck.inHand.copy(),
         inOpponentHand=deck.inOpponentHand.copy(),
-        inDiscardPile=deck.inDiscardPile.copy())
-    
+        inDiscardPile=deck.inDiscardPile.copy(),
+    )
+
     start = len(newDeck.inOpponentHand)
     newDeck = playTurn(newDeck)
     end = len(newDeck.inOpponentHand)
     score1 = start - end
-    
+
     newDeck = Deck(
         allCards=deck.allCards.copy(),
         drawPile=deck.drawPile.copy(),
         onTable=deck.onTable.copy(),
         inHand=deck.inHand.copy(),
         inOpponentHand=deck.inOpponentHand.copy(),
-        inDiscardPile=deck.inDiscardPile.copy())
+        inDiscardPile=deck.inDiscardPile.copy(),
+    )
     newDeck.inOpponentHand.append(newDeck.inDiscardPile.pop())
     start = len(newDeck.inOpponentHand)
     newDeck = playTurn(newDeck)
     end = len(newDeck.inOpponentHand)
     score2 = start - end
-    
+
     difference = (score1 - score2) + 1
     print(f"NbPose difference: {difference}")
-    
+
     # RÉAJUSTEMENT : bonus jusqu'à 25 max pour nbPose
     return min(difference * 6, 25), difference
 
@@ -237,31 +252,31 @@ def evaluateCardPlacement(deck: Deck, checkCard: Card):
     100 = victoire quasi assurée
     """
     totalScore = 0
-    
+
     # Composante 1 : Polyvalence (0-40)
     polyvalenceScore, compSuite, compGroup = polyvalenceCombinatoire(deck, checkCard)
     totalScore += polyvalenceScore
-    
+
     # Composante 2 : Position (0-20)
     positionScore = positionDansSequence(deck, checkCard, compSuite, compGroup)
     print(f"Position score: {positionScore}")
     totalScore += positionScore
-    
+
     # Composante 3 : Doublon (-25 à 0)
     doublonScore = checkDoublon(deck, checkCard)
     print(f"Doublon score: {doublonScore}")
     totalScore += doublonScore
-    
+
     # Composante 4 : Impact pose (0 à +25)
-    #poseScore, diff = nbPose(deck, checkCard)
-    #print(f"Pose score: {poseScore}")
-    #totalScore += poseScore
-    
+    # poseScore, diff = nbPose(deck, checkCard)
+    # print(f"Pose score: {poseScore}")
+    # totalScore += poseScore
+
     # NORMALISATION : ramener entre 0 et 100
     # Minimum possible : -25 = -25 → devient 0
     # Maximum possible : 40 + 20 + 25 = 85 → devient 100
-    totalScore = round((totalScore+25)/110 * 100, 2)
-    
+    totalScore = round((totalScore + 25) / 110 * 100, 2)
+
     return totalScore
 
 
@@ -271,12 +286,11 @@ def Test():
     deck.inOpponentHand = [deck.pickCard() for _ in range(7)]
     deck.inDiscardPile = [deck.pickCard() for _ in range(1)]
     moy = 0
-    moy2 =0
+    moy2 = 0
     for card in deck.drawPile:
         score = evaluateCardPlacement(deck, card)
         moy += score
     print(f"Average score: {moy / len(deck.drawPile)}")
-
 
 
 if __name__ == "__main__":
@@ -291,4 +305,4 @@ if __name__ == "__main__":
         # test_deck.inOpponentHand.append(test_deck.pickCard())
     # playTurn(test_deck)
     DropLess(test_deck)
-    #Test()
+    # Test()
