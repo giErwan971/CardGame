@@ -57,6 +57,7 @@ diceTileMap = pygame.image.load("Assets/MainMenu/DiceTileMap.png")
 diceTiles = [diceTileMap.subsurface(0, y, 64, 16) for y in range(0, 118, 16)]
 
 rules = pygame.image.load("Assets/MainMenu/RuleMenu.png")
+teamImage = pygame.image.load("Assets/MainMenu/TeamMenu.png")
 
 playButtonTileMap = pygame.image.load("Assets/MainMenu/Button/PlayTileMap.png")
 playButtonTiles = [
@@ -215,7 +216,10 @@ def playButtonClic():
 
 
 def teamButtonClic():
-    print("Team Pressed")
+    global isOnTeamScreen, allButton
+    isOnTeamScreen = True
+    for button in allButton:
+        button.isActive = False
 
 
 def ruleButtonClic():
@@ -334,6 +338,7 @@ selectedCard = Cards.cardSelected(None, 0, 0)
 selectedCard.y = 0
 run = True
 isOnRuleScreen = False
+isOnTeamScreen = False
 isOnMainMenu = True
 isOnDelPhase = False
 isOnDrawPhase = False
@@ -379,6 +384,10 @@ while run:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
             if isOnRuleScreen:
                 isOnRuleScreen = False
+                for button in allButton:
+                    button.isActive = True
+            if isOnTeamScreen:
+                isOnTeamScreen = False
                 for button in allButton:
                     button.isActive = True
 
@@ -462,6 +471,14 @@ while run:
                 RuleScreen, (resoCible[0] * 3, resoCible[1] * 3)
             )
             RuleScreen.blit(rules, (0, 0))
+            RuleScreen = pygame.transform.scale(
+                RuleScreen, (resolution[0], resolution[1])
+            )
+        if isOnTeamScreen:
+            RuleScreen = pygame.transform.scale(
+                RuleScreen, (resoCible[0] * 3, resoCible[1] * 3)
+            )
+            RuleScreen.blit(teamImage, (0, 0))
             RuleScreen = pygame.transform.scale(
                 RuleScreen, (resolution[0], resolution[1])
             )
