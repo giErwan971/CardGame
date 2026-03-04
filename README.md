@@ -69,7 +69,10 @@ Le bot sélectionne ses actions (piocher, poser, défausser) en fonction d’une
 
 ### Lancement
 
-ouvrez Script/Main.py
+- ouvrez visual studio code
+- selectionner File/Open Folder ( Ctrl + k suivie de Ctrl + o)
+- selectionner le dossier CardGame
+- lancer le script Main.py dans le dossier script
 
 *Le jeu se lance en plein écran pour une meilleure immersion.*
 
