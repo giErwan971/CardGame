@@ -446,6 +446,7 @@ while run:
                 isOnDrawPhase,
                 isOnDelPhase,
             )
+            doDropCard = False
 
     # LES GRAPHISMES
     UIScreen = pygame.transform.scale(UIScreen, (resoCible[0], resoCible[1]))
